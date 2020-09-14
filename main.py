@@ -78,7 +78,7 @@ async def adduser(ctx, *, addid: str):
 @bot.command()
 async def statuser(ctx) :
   if idList == '' :
-    resultStr2 = '아무 것도 등록되지 않았습니다.'
+    resultStr2 = '오류! - 아무 것도 등록되지 않았습니다.'
   else :
     resultStr2 = idList
   await ctx.send(resultStr2)
@@ -91,6 +91,16 @@ async def deleteuser(ctx, *, deleteid: str) :
   else :
     resultStr = str(deleteid) + ' 오류! - 삭제에 실패하셨습니다!'
   await ctx.send(resultStr)
+
+@bot.command()
+async def update(ctx, *, updateID: str) :
+  if updateID in idList :
+    updateNum = Connect_User(updateID)
+    idList[updateID]['getAnswer'] = updateNum[1]
+    resultStr3 = "정상적으로 업데이트되었습니다."
+  else :
+    resultStr3 = "오류! - 등록 되어 있지 않는 아이디입니다."
+  await ctx.send(resultStr3)
 
 extensions = [
 	  # Same name as it would be if you were importing it
