@@ -7,7 +7,7 @@ from keep_alive import keep_alive
 from discord.ext import commands
 
 url = "https://www.acmicpc.net/user/"
-idList = []
+idList = {}
 
 def FileRead() : # IDList.json을 불러옴.
   global idList
@@ -71,7 +71,7 @@ async def adduser(ctx, *, addid: str):
       resultStr = "오류! - 등록되지 않았습니다!"
     else :
       resultStr = "정상적으로 등록되었습니다!"
-      idList.append(addid)
+      idList[addid] = {'code' : 1111, 'getAnswer' : idNum[1]}
       FileWrite()
   await ctx.send(f'{resultStr}')
 
@@ -87,9 +87,9 @@ async def statuser(ctx) :
 async def deleteuser(ctx, *, deleteid: str) :
   if deleteid in idList :
     del idList[deleteid]
-    resultStr = str(deleteid) + '삭제에 성공하셨습니다!'
+    resultStr = str(deleteid) + ' 삭제에 성공하셨습니다!'
   else :
-    resultStr = str(deleteid) + '삭제에 실패하셨습니다!'
+    resultStr = str(deleteid) + ' 오류! - 삭제에 실패하셨습니다!'
   await ctx.send(resultStr)
 
 extensions = [
