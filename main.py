@@ -9,7 +9,7 @@ from discord.ext import commands
 url = "https://www.acmicpc.net/user/"
 idList = []
 
-def FileRead() :
+def FileRead() : # IDList.json을 불러옴.
   global idList
   f = open('IDList.json', 'r')
   readJson = f.readline()
@@ -20,7 +20,7 @@ def FileRead() :
     print('IDList 불러오기 완료!')
   f.close() 
   
-def FileWrite() :
+def FileWrite() : #IDList.json을 저장함.
   global idList
   f = open('IDList.json', 'w')
   writeJson = json.dumps(idList)
@@ -28,8 +28,19 @@ def FileWrite() :
   f.close
   print('IDList 저장 완료!')
 
-def Connect_User(id) :
-  print('hello')
+def Connect_User(id) : #acmicpc.net/user/의 id를 붙여 웹크롤링.
+  userList = []
+  f_url = url + id
+  try :  
+    req = urllib.request.urlopen(f_url)
+  except HTTPError :
+    print("오류 발생!")
+  else :
+    res = req.read()
+    soup = BeautifulSoup(res, 'html.parser')
+    userList = soup.find_all('td')
+    userList = [each_line.get_text().strip() for each_line in userList[:10]]
+    return userList
 
 bot = commands.Bot(
 	command_prefix="!",  # Change to desired prefix
@@ -55,20 +66,14 @@ async def ping(ctx):
 
 @bot.command()
 async def adduser(ctx, *, addid: str):
-  f_url = url + addid
-  try :  
-    req = urllib.request.urlopen(f_url)
-  except HTTPError:
-    resultStr = f'{addid} 등록에 실패하였습니다!'
-    print("오류 발생!")
+  idNum = Connect_User(addid)
+  if len(idNum) == 0 :
+    print('등록 오류')
+    resultStr = "오류! - 등록이 되지 않았습니다!"
   else :
-    res = req.read()
-    soup = BeautifulSoup(res, 'html.parser')
-    num = soup.find_all('td')
-    num = [each_line.get_text().strip() for each_line in num[:10]]
-    idList.append({addid:num[1]})
+    resultStr = "정상적으로 등록되었습니다!"
+    idList.append(addid)
     FileWrite()
-    resultStr = f'{addid} 등록에 성공하셨습니다!'
   await ctx.send(f'{resultStr}')
 
 @bot.command()
