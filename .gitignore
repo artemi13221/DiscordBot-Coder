@@ -1,3 +1,4 @@
 .env
-
 IDList.json
+
+__pycache__/

@@ -40,7 +40,7 @@ def Connect_User(id) : #acmicpc.net/user/의 id를 붙여 웹크롤링.
     soup = BeautifulSoup(res, 'html.parser')
     userList = soup.find_all('td')
     userList = [each_line.get_text().strip() for each_line in userList[:10]]
-    return userList
+  return userList
 
 bot = commands.Bot(
 	command_prefix="!",  # Change to desired prefix
@@ -56,24 +56,23 @@ async def on_ready():  # When the bot is ready
     FileRead()
 
 @bot.command()
-async def 안녕(ctx): #'안녕'을 입력하였을 때
-  await ctx.send("Hello, World!") #함수의 비동기 흐름을 멈추고 명령을 수행.
-
-@bot.command()
 async def ping(ctx):
     latancy = bot.latency #봇의 레이턴시 구하기
     await ctx.send(f'현재 핑은 {round(latancy * 1000)}ms입니다') #핑을 출력 
 
 @bot.command()
 async def adduser(ctx, *, addid: str):
-  idNum = Connect_User(addid)
-  if len(idNum) == 0 :
-    print('등록 오류')
-    resultStr = "오류! - 등록이 되지 않았습니다!"
+  if addid in idList :
+    resultStr = "오류! - 중복이 감지되었습니다. 등록되지 않았습니다."
   else :
-    resultStr = "정상적으로 등록되었습니다!"
-    idList.append(addid)
-    FileWrite()
+    idNum = Connect_User(addid)
+    if len(idNum) == 0 :
+      print('등록 오류')
+      resultStr = "오류! - 등록되지 않았습니다!"
+    else :
+      resultStr = "정상적으로 등록되었습니다!"
+      idList.append(addid)
+      FileWrite()
   await ctx.send(f'{resultStr}')
 
 @bot.command()
@@ -94,7 +93,7 @@ async def deleteuser(ctx, *, deleteid: str) :
   await ctx.send(resultStr)
 
 extensions = [
-	'cogs.cog_example'  # Same name as it would be if you were importing it
+	  # Same name as it would be if you were importing it
 ]
 
 if __name__ == '__main__':  # Ensures this is the file being ran
