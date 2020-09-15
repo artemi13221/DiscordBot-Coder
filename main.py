@@ -72,7 +72,7 @@ async def adduser(ctx, *, addid: str):
       resultStr = "오류! - 등록되지 않았습니다!"
     else :
       resultStr = "정상적으로 등록되었습니다!"
-      idList[addid] = {'authorID' : t, 'getAnswer' : idNum[1]}
+      idList[addid] = {'authorID' : t, 'getAnswer' : idNum[1], 'todayAnswer' : False}
       FileWrite()
   await ctx.send(f'{resultStr}')
 
@@ -107,6 +107,23 @@ async def update(ctx, *, updateID: str) :
   else :
     resultStr3 = "오류! - 등록 되어 있지 않는 아이디입니다."
   await ctx.send(resultStr3)
+
+@bot.command()
+async def reset(ctx) :
+  # 이 명령어는 자동으로 오전 12시 또는 오전 6시가 되었을 때 실행
+  # 모든 idList의 담긴 todayAnswer = False로 지정
+  # 그와 동시에 모든 사용자 업데이트를 통해 맞은 문제의 개수를 재조정
+  # 안 푼 사람, 즉 todayAnswer = False였던 사람을 다른 List에 기록.
+  await ctx.send('Reset...')
+
+@bot.command()
+async def automessage(ctx) :
+  # 이 명령어는 3시간격으로 아침 9시부터 저녁 11:59분까지만 실행함.
+  # 이 메세지가 나올 땐 모든 사용자 업데이트를 통해 맞은 문제의 개수 재조정
+  # 만약, 맞은 문제의 개수의 조정이 생겼을 경우, todayAnswer = True로 전환
+  # 메세지가 나갈 땐 todayAnswer = False인 사람들에 author id를 불러와 멘션으로 알림.
+  # 그와 동시에 어제 안 푼 사람의 List를 사용해 표시하면서 공부할 의지를 다지게 해줌.
+  await ctx.send('AutoMessage...')
 
 extensions = [
 	  # Same name as it would be if you were importing it
