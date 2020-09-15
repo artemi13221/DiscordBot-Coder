@@ -44,7 +44,7 @@ def Connect_User(id) : #acmicpc.net/user/의 id를 붙여 웹크롤링.
 
 bot = commands.Bot(
 	command_prefix="!",  # Change to desired prefix
-	case_insensitive=True  # Commands aren't case-sensitive
+	case_insensitive=False  # Commands aren't case-sensitive
 )
 
 bot.author_id = 281419528053981185  # Change to your discord id!!!
@@ -58,10 +58,11 @@ async def on_ready():  # When the bot is ready
 @bot.command()
 async def ping(ctx):
     latancy = bot.latency #봇의 레이턴시 구하기
-    await ctx.send(f'현재 핑은 {round(latancy * 1000)}ms입니다') #핑을 출력 
+    await ctx.send(f'현재 핑은 {round(latancy * 1000)}ms입니다.') #핑을 출력 
 
 @bot.command()
 async def adduser(ctx, *, addid: str):
+  t = ctx.author.id
   if addid in idList :
     resultStr = "오류! - 중복이 감지되었습니다. 등록되지 않았습니다."
   else :
@@ -71,7 +72,7 @@ async def adduser(ctx, *, addid: str):
       resultStr = "오류! - 등록되지 않았습니다!"
     else :
       resultStr = "정상적으로 등록되었습니다!"
-      idList[addid] = {'code' : 1111, 'getAnswer' : idNum[1]}
+      idList[addid] = {'authorID' : t, 'getAnswer' : idNum[1]}
       FileWrite()
   await ctx.send(f'{resultStr}')
 
@@ -91,6 +92,11 @@ async def deleteuser(ctx, *, deleteid: str) :
   else :
     resultStr = str(deleteid) + ' 오류! - 삭제에 실패하셨습니다!'
   await ctx.send(resultStr)
+
+@bot.command()
+async def site(ctx) :
+  t = ctx.author.id
+  await ctx.send(f'<@!{t}>, https://www.acmicpc.net/')
 
 @bot.command()
 async def update(ctx, *, updateID: str) :
