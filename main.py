@@ -1,7 +1,20 @@
 import discord
 import os
-from discord.ext import tasks ,commands
+import schedule
+import time
+from discord.ext import tasks, commands
 
+ifloop = True
+
+def core():
+  global ifloop, bot
+  print("loading core...")
+  ifloop = False
+  extensions = [
+	'cogs.core'
+  ]
+  for extension in extensions:
+    bot.load_extension(extension)
 
 bot = commands.Bot(command_prefix='!', help_command=None)
 @bot.event
@@ -23,13 +36,11 @@ async def unload(ctx, cog=None):
   else :
     bot.unload_extension(f'cogs.{cog}')
 
-extensions = [
-	'cogs.core'
-]
-
 if __name__ == '__main__':
-  for extension in extensions:
-    bot.load_extension(extension)
+  schedule.every().day.at("6:00").do(core)
+  while ifloop :
+    schedule.run_pending()
+    time.sleep(1)
 
 token = os.environ.get("DISCORD_BOT_SECRET")
 bot.run(token)

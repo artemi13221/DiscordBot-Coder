@@ -1,8 +1,6 @@
 import discord
 import json
 import urllib.request
-import asyncio
-from datetime import datetime
 from bs4 import BeautifulSoup
 from urllib.request import HTTPError
 from discord.ext import tasks, commands
@@ -54,10 +52,15 @@ def Update_User(id) :
 			print(f'{id}는 문제를 풀었음.')
 			idList[id]['getAnswer'] = temp_update_num[1]
 			idList[id]['today'] = True
+			FileWrite()
 			return True
 		else:
 			print(f'{id}는 문제를 풀지않음.')
 			return False
+
+def Reset_User(id) :
+	global idList
+	idList[id]['today'] = False
 
 class DevCommands(commands.Cog):
 	def __init__(self, bot):
@@ -98,7 +101,6 @@ class DevCommands(commands.Cog):
 	
 	@commands.command()
 	async def user(self, ctx, stat=None, id='zxcasdqwe'):
-
 		if stat == 'add' :
 			t = ctx.author.id
 			if id in idList :
@@ -122,13 +124,12 @@ class DevCommands(commands.Cog):
 			if idList == '' :
 				await ctx.send('오류! - 아무 것도 등록되지 않았습니다.')
 			else :
-				# embeduser = discord.Embed(title="현재상황", description='현재 상황을 보고합니다.', color=0x00ff56)
-				# embeduser.set_author(name="Coding bot", url="https://www.acmicpc.net/", icon_url="https://user-images.githubusercontent.com/42747200/46140125-da084900-c26d-11e8-8ea7-c45ae6306309.png")
-				# for userid in idList :
-				# 	embeduser.add_field(name=userid, value=f'맞은 문제수 : {idList[userid]['getAnswer']}, 오늘의 문제 : {idList[userid]['today']}')
-				await ctx.send(idList)
+				idListStr = ''
+				for statid in idList :
+					idListStr += statid + ' : 맞은문제수 : ' + idList[statid]['getAnswer'] + ', 오늘 상황 : ' + (str)(idList[statid]['today']) + '\n'
+				await ctx.send(idListStr)
 	
-	@tasks.loop(minutes=5)
+	@tasks.loop(hours=5)
 	async def loop_station(self):
 		if self.loopcount > 0 :
 			self.loopcount += 1
@@ -141,12 +142,15 @@ class DevCommands(commands.Cog):
 				mention = "없음"
 			embed=discord.Embed(title="업데이트", description='현재 상황을 보고합니다.', color=0x00ff56)
 			embed.set_author(name="Coding bot", url="https://www.acmicpc.net/", icon_url="https://user-images.githubusercontent.com/42747200/46140125-da084900-c26d-11e8-8ea7-c45ae6306309.png")
-			embed.add_field(name="풀지 않은 ID", value=f'{mention}', inline=True)
+			embed.add_field(name="풀지 않은 ID", value=f'{mention}', inline=False)
 
 			if self.loopcount >= 4 :
 				print("This is reset!")
 				self.loopcount = 1
-				embed.add_field(name="리셋을 시작합니다.", value=f'풀지않은 사람 : {mention}, 풀지않은 분들은 열심히 해주시기 바랍니다.')
+				embed.add_field(name="리셋을 시작합니다.", value=f'풀지않은 사람 : {mention}, 풀지않은 분들은 열심히 해주시기 바랍니다.', inline=False)
+				for autoid in idList:
+					Reset_User(autoid)
+				FileWrite()
 			channel = self.bot.get_channel(755469632772767873)
 			await channel.send(embed=embed)
 		else :
@@ -155,8 +159,9 @@ class DevCommands(commands.Cog):
 	
 	@loop_station.after_loop
 	async def reset(self):
+		print('오류이 발생하였습니다.')
 		channel = self.bot.get_channel(755469632772767873)
-		await channel.send('봇의 백그라운드가 종료되었습니다. 봇을 재시작합니다.')
+		await channel.send('오류가 발생하여 봇의 백그라운드가 종료되었습니다.')
 		
 	@commands.command()
 	async def start(self, ctx):
