@@ -64,6 +64,7 @@ class DevCommands(commands.Cog):
 		self.bot = bot
 		self.loopcount = 0
 		FileRead()
+		self.loop_station.start()
 	
 	def cog_unload(self) :
 		self.loop_station.cancle()
@@ -121,9 +122,13 @@ class DevCommands(commands.Cog):
 			if idList == '' :
 				await ctx.send('오류! - 아무 것도 등록되지 않았습니다.')
 			else :
+				# embeduser = discord.Embed(title="현재상황", description='현재 상황을 보고합니다.', color=0x00ff56)
+				# embeduser.set_author(name="Coding bot", url="https://www.acmicpc.net/", icon_url="https://user-images.githubusercontent.com/42747200/46140125-da084900-c26d-11e8-8ea7-c45ae6306309.png")
+				# for userid in idList :
+				# 	embeduser.add_field(name=userid, value=f'맞은 문제수 : {idList[userid]['getAnswer']}, 오늘의 문제 : {idList[userid]['today']}')
 				await ctx.send(idList)
 	
-	@tasks.loop(seconds=30)
+	@tasks.loop(minutes=5)
 	async def loop_station(self):
 		if self.loopcount > 0 :
 			self.loopcount += 1
@@ -131,10 +136,17 @@ class DevCommands(commands.Cog):
 			for autoid in idList :
 				if not(Update_User(autoid)) :
 					notSoloveList.append('<@' + (str)(idList[autoid]['authorID']) + '>')
-
-			embed=discord.Embed(title="업데이트!", description='현재 상황을 보고합니다.', color=0x00ff56)
+			mention = ", ".join(notSoloveList)
+			if mention == '' :
+				mention = "없음"
+			embed=discord.Embed(title="업데이트", description='현재 상황을 보고합니다.', color=0x00ff56)
 			embed.set_author(name="Coding bot", url="https://www.acmicpc.net/", icon_url="https://user-images.githubusercontent.com/42747200/46140125-da084900-c26d-11e8-8ea7-c45ae6306309.png")
-			embed.add_field(name="풀지 않은 ID", value=f'{", ".join(notSoloveList)}', inline=True)
+			embed.add_field(name="풀지 않은 ID", value=f'{mention}', inline=True)
+
+			if self.loopcount >= 4 :
+				print("This is reset!")
+				self.loopcount = 1
+				embed.add_field(name="리셋을 시작합니다.", value=f'풀지않은 사람 : {mention}, 풀지않은 분들은 열심히 해주시기 바랍니다.')
 			channel = self.bot.get_channel(755469632772767873)
 			await channel.send(embed=embed)
 		else :
@@ -144,7 +156,7 @@ class DevCommands(commands.Cog):
 	@loop_station.after_loop
 	async def reset(self):
 		channel = self.bot.get_channel(755469632772767873)
-		await channel.send('Hello~')
+		await channel.send('봇의 백그라운드가 종료되었습니다. 봇을 재시작합니다.')
 		
 	@commands.command()
 	async def start(self, ctx):
