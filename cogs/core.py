@@ -129,7 +129,7 @@ class DevCommands(commands.Cog):
 					idListStr += statid + ' : 맞은문제수 : ' + idList[statid]['getAnswer'] + ', 오늘 상황 : ' + (str)(idList[statid]['today']) + '\n'
 				await ctx.send(idListStr)
 	
-	@tasks.loop(hours=5)
+	@tasks.loop(hours=6)
 	async def loop_station(self):
 		if self.loopcount > 0 :
 			self.loopcount += 1
