@@ -8,6 +8,7 @@ from discord.ext import tasks, commands
 client = discord.Client()
 url = "https://www.acmicpc.net/user/"
 idList = {}
+DFAULTCHANNEL = 755469632772767873
 
 def FileRead() : # IDList.json을 불러옴.
 	global idList
@@ -49,18 +50,42 @@ def Update_User(id) :
 	else:
 		temp_update_num = Connect_User(id)
 		if idList[id]['getAnswer'] != temp_update_num[1] :
-			print(f'{id}는 문제를 풀었음.')
 			idList[id]['getAnswer'] = temp_update_num[1]
 			idList[id]['today'] = True
-			FileWrite()
 			return True
 		else:
-			print(f'{id}는 문제를 풀지않음.')
 			return False
 
 def Reset_User(id) :
 	global idList
 	idList[id]['today'] = False
+
+def Update_today() :
+	global idList
+	notSoloveList = []
+	for autoid in idList :
+		if not(Update_User(autoid)) :
+			notSoloveList.append('<@' + (str)(idList[autoid]['authorID']) + '>')
+	FileWrite()
+	mention = ", ".join(notSoloveList)
+	if mention == '' :
+		mention = "없음"
+	embed=discord.Embed(title="업데이트", description='현재 상황을 보고합니다.', color=0x00ff56)
+	embed.set_author(name="Coding bot", url="https://www.acmicpc.net/", icon_url="https://user-images.githubusercontent.com/42747200/46140125-da084900-c26d-11e8-8ea7-c45ae6306309.png")
+	embed.add_field(name="풀지 않은 ID", value=f'{mention}', inline=False)
+
+	return embed
+
+def Reset_today() :
+	global idList
+
+	embed=discord.Embed(title="리셋", description='오늘 푼 문제를 모두 초기화합니다.', color=0x00ff56)
+	embed.set_author(name="Coding bot", url="https://www.acmicpc.net/", icon_url="https://user-images.githubusercontent.com/42747200/46140125-da084900-c26d-11e8-8ea7-c45ae6306309.png")
+	for autoid in idList:
+		Reset_User(autoid)
+	FileWrite()
+
+	return embed
 
 class DevCommands(commands.Cog):
 	def __init__(self, bot):
@@ -70,7 +95,7 @@ class DevCommands(commands.Cog):
 		self.loop_station.start()
 	
 	def cog_unload(self) :
-		self.loop_station.cancle()
+		self.loop_station.cancel()
 
 	@commands.command()
 	async def reload(self, ctx, cog='cogs.core') :
@@ -95,7 +120,7 @@ class DevCommands(commands.Cog):
 		embed.add_field(name="Add User", value="```!user add <id>```", inline=True)
 		embed.add_field(name="Del User", value="```!user del <id>```", inline=True)
 		embed.add_field(name="Stat User", value="```!user stat```", inline=True)
-		embed.add_field(name="Update User", value="```!update <id>```", inline=True)
+		embed.add_field(name="Update User", value="```!update```", inline=True)
 		embed.add_field(name="Site", value="```!site```", inline=True)
 		await ctx.send(embed=embed)
 	
@@ -126,41 +151,36 @@ class DevCommands(commands.Cog):
 			else :
 				idListStr = ''
 				for statid in idList :
-					idListStr += statid + ' : 맞은문제수 : ' + idList[statid]['getAnswer'] + ', 오늘 상황 : ' + (str)(idList[statid]['today']) + '\n'
+					idListStr += statid + '\t\t - 맞은문제수 : ' + idList[statid]['getAnswer'] + ',\t 오늘 상황 : ' + (str)(idList[statid]['today']) + '\n'
+				if idListStr == '' :
+					idListStr = '추가된 유저가 없습니다.'
 				await ctx.send(idListStr)
 	
-	@tasks.loop(hours=6)
+	@tasks.loop(seconds=10) #hours=3
 	async def loop_station(self):
-		if self.loopcount > 0 :
+		if (self.loopcount > 0) & (self.loopcount < 7) :
+			embed = Update_today()
 			self.loopcount += 1
-			notSoloveList = []		
-			for autoid in idList :
-				if not(Update_User(autoid)) :
-					notSoloveList.append('<@' + (str)(idList[autoid]['authorID']) + '>')
-			mention = ", ".join(notSoloveList)
-			if mention == '' :
-				mention = "없음"
-			embed=discord.Embed(title="업데이트", description='현재 상황을 보고합니다.', color=0x00ff56)
-			embed.set_author(name="Coding bot", url="https://www.acmicpc.net/", icon_url="https://user-images.githubusercontent.com/42747200/46140125-da084900-c26d-11e8-8ea7-c45ae6306309.png")
-			embed.add_field(name="풀지 않은 ID", value=f'{mention}', inline=False)
-
-			if self.loopcount >= 4 :
-				print("This is reset!")
-				self.loopcount = 1
-				embed.add_field(name="리셋을 시작합니다.", value=f'풀지않은 사람 : {mention}, 풀지않은 분들은 열심히 해주시기 바랍니다.', inline=False)
-				for autoid in idList:
-					Reset_User(autoid)
-				FileWrite()
-			channel = self.bot.get_channel(755469632772767873)
+			channel = self.bot.get_channel(DFAULTCHANNEL)
 			await channel.send(embed=embed)
+		elif self.loopcount >= 7 :
+			channel = self.bot.get_channel(DFAULTCHANNEL)
+			if self.loopcount == 7 :
+				self.loopcount += 1
+				print("휴식")
+			else :
+				self.loopcount = 1
+				print('reset')
+				embed = Reset_today()
+				await channel.send(embed=embed)
 		else :
-			self.loopcount += 1
-			print("Loop Start")
-	
+			self.loopcount = 1
+			print("Started loop")
+
 	@loop_station.after_loop
 	async def reset(self):
 		print('오류이 발생하였습니다.')
-		channel = self.bot.get_channel(755469632772767873)
+		channel = self.bot.get_channel(DFAULTCHANNEL)
 		await channel.send('오류가 발생하여 봇의 백그라운드가 종료되었습니다.')
 		
 	@commands.command()
@@ -170,8 +190,23 @@ class DevCommands(commands.Cog):
 
 	@commands.command()
 	async def stop(self, ctx):
-		self.loop_station.cancle()
+		self.loop_station.cancel()
 		await ctx.send("stop loop!")
+
+	@commands.command()
+	async def today(self, ctx) :
+		idList['dhtm1231']['today'] = True
+		channel = self.bot.get_channel(DFAULTCHANNEL)
+		await channel.send("관리자가 치트를 사용하였습니다. ==> dhtm1231의 오늘 문제 풀이를 True로 설정함.")
+
+	@commands.command()
+	async def update(self, ctx) :
+		Update_today()
+		await ctx.send("업데이트를 완료하였습니다.")
+
+	@commands.command()
+	async def site(self, ctx) :
+		await ctx.send("https://www.acmicpc.net/")
 
 def setup(bot):
 	print("Loaded! -Core.py")
