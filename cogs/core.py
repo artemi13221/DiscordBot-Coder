@@ -9,7 +9,8 @@ client = discord.Client()
 url = "https://www.acmicpc.net/user/"
 idList = {}
 DFAULTCHANNEL = 755469632772767873
-
+#755469632772767873 -Main
+#758423908986257458 -Test
 def FileRead() : # IDList.json을 불러옴.
 	global idList
 	f = open('IDList.json', 'r')
@@ -92,6 +93,7 @@ class DevCommands(commands.Cog):
 		self.bot = bot
 		self.loopcount = 0
 		FileRead()
+		Reset_today()
 		self.loop_station.start()
 	
 	def cog_unload(self) :
@@ -156,7 +158,7 @@ class DevCommands(commands.Cog):
 					idListStr = '추가된 유저가 없습니다.'
 				await ctx.send(idListStr)
 	
-	@tasks.loop(seconds=10) #hours=3
+	@tasks.loop(hours=3) #hours=3
 	async def loop_station(self):
 		if (self.loopcount > 0) & (self.loopcount < 7) :
 			embed = Update_today()
@@ -194,7 +196,7 @@ class DevCommands(commands.Cog):
 		await ctx.send("stop loop!")
 
 	@commands.command()
-	async def today(self, ctx) :
+	async def admin_today(self, ctx) :
 		idList['dhtm1231']['today'] = True
 		channel = self.bot.get_channel(DFAULTCHANNEL)
 		await channel.send("관리자가 치트를 사용하였습니다. ==> dhtm1231의 오늘 문제 풀이를 True로 설정함.")
