@@ -1,16 +1,18 @@
+from ast import Num
 import discord
 import json
 import urllib.request
 from bs4 import BeautifulSoup
 from urllib.request import HTTPError
 from discord.ext import tasks, commands
+from tabulate import tabulate
 
 client = discord.Client()
 url = "https://www.acmicpc.net/user/"
 idList = {}
 DFAULTCHANNEL = 755469632772767873
 #755469632772767873 -Main
-#758423908986257458 -Test
+#759826483518111757 -Test
 def FileRead() : # IDList.json을 불러옴.
 	global idList
 	f = open('IDList.json', 'r')
@@ -83,9 +85,11 @@ def Reset_today() :
 	embed=discord.Embed(title="리셋", description='오늘 푼 문제를 모두 초기화합니다.', color=0x00ff56)
 	embed.set_author(name="Coding bot", url="https://www.acmicpc.net/", icon_url="https://user-images.githubusercontent.com/42747200/46140125-da084900-c26d-11e8-8ea7-c45ae6306309.png")
 	for autoid in idList:
+		if(not(idList[autoid]['today'])) :
+			idList[autoid]['warning'] += 1
 		Reset_User(autoid)
 	FileWrite()
-
+	print("Reset Complete")
 	return embed
 
 class DevCommands(commands.Cog):
@@ -139,7 +143,7 @@ class DevCommands(commands.Cog):
 					await ctx.send('오류! - 등록되지 않았습니다!')
 				else :
 					await ctx.send('정상적으로 등록되었습니다!')
-					idList[id] = {'authorID' : t, 'getAnswer' : idNum[1], 'today' : False}
+					idList[id] = {'authorID' : t, 'getAnswer' : idNum[1], 'today' : False, 'warning' : 0}
 					FileWrite()
 		elif stat == 'del':
 			if id in idList :
@@ -151,12 +155,14 @@ class DevCommands(commands.Cog):
 			if idList == '' :
 				await ctx.send('오류! - 아무 것도 등록되지 않았습니다.')
 			else :
-				idListStr = ''
+				table = []
 				for statid in idList :
-					idListStr += statid + '\t\t - 맞은문제수 : ' + idList[statid]['getAnswer'] + ',\t 오늘 상황 : ' + (str)(idList[statid]['today']) + '\n'
-				if idListStr == '' :
-					idListStr = '추가된 유저가 없습니다.'
-				await ctx.send(idListStr)
+					#statid.ljust(12, ' ') + ' - 맞은문제수 : ' + idList[statid]['getAnswer'].ljust(4, ' ') + ' 오늘 상황 : ' + (str)(idList[statid]['today']).ljust(7, ' ') + '경고 수 : ' + (str)(idList[statid]['warning']) + '\n'
+					table.append([statid, idList[statid]['getAnswer'], idList[statid]['today'], idList[statid]['warning']])
+				headers = ["ID", 'Answer', 'Today', 'Warning']
+				resultTable = '```py\n'+ tabulate(table, headers, tablefmt='presto', numalign='center', stralign='center') + '\n```'
+				print(resultTable)
+				await ctx.send(resultTable)
 	
 	@tasks.loop(hours=3) #hours=3
 	async def loop_station(self):
@@ -180,7 +186,7 @@ class DevCommands(commands.Cog):
 			print("Started loop")
 
 	@loop_station.after_loop
-	async def reset(self):
+	async def afterloop(self):
 		print('오류이 발생하였습니다.')
 		channel = self.bot.get_channel(DFAULTCHANNEL)
 		await channel.send('오류가 발생하여 봇의 백그라운드가 종료되었습니다.')
@@ -193,7 +199,8 @@ class DevCommands(commands.Cog):
 	@commands.command()
 	async def stop(self, ctx):
 		self.loop_station.cancel()
-		await ctx.send("stop loop!")
+		FileWrite()
+		await ctx.send("도중에 종료하셨습니다. 현재 진행 상황을 저장합니다.")
 
 	@commands.command()
 	async def admin_today(self, ctx) :
@@ -207,9 +214,35 @@ class DevCommands(commands.Cog):
 		await ctx.send("업데이트를 완료하였습니다.")
 
 	@commands.command()
+	async def reset(self, ctx) :
+		embedReset = Reset_today()
+		await ctx.send(embed=embedReset)
+
+	@commands.command()
 	async def site(self, ctx) :
 		await ctx.send("https://www.acmicpc.net/")
 
+	@commands.command()
+	async def warning(self, ctx, stat = 'stat', id=' ', num = '1') :
+		if num.isdigit() :
+			if stat == 'add' :
+				if id in idList :
+					idList[id]['warning'] += int(num)
+					FileWrite()
+					await ctx.send(id + "의 경고를 " + num + "만큼 올렸습니다.")
+				else :
+					await ctx.send("없는 id이거나, id를 입력하지 않으셨습니다. 다시 입력하여 주세요.")
+			elif stat == 'del' :
+				if id in idList :
+					idList[id]['warning'] -= int(num)
+					FileWrite()
+					await ctx.send(id + "의 경고를 " + num + "만큼 내렸습니다.")
+				else :
+					await ctx.send("없는 id이거나, id를 입력하지 않으셨습니다. 다시 입력하여 주세요.")
+			else :
+				await ctx.send("제대로 된 명령어를 입력해주세요.")
+		else :
+			await ctx.send("숫자를 제대로 입력해주세요.")
 def setup(bot):
 	print("Loaded! -Core.py")
 	bot.add_cog(DevCommands(bot))
