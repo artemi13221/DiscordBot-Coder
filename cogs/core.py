@@ -48,10 +48,11 @@ def Connect_User(id) : #acmicpc.net/user/의 id를 붙여 웹크롤링.
 
 def Update_User(id) :
 	global idList
+	temp_update_num = Connect_User(id)
 	if idList[id]['today'] :
+		idList[id]['getAnswer'] = temp_update_num[1]
 		return True
 	else:
-		temp_update_num = Connect_User(id)
 		if idList[id]['getAnswer'] != temp_update_num[1] :
 			idList[id]['getAnswer'] = temp_update_num[1]
 			idList[id]['today'] = True
@@ -161,21 +162,23 @@ class DevCommands(commands.Cog):
 					table.append([statid, idList[statid]['getAnswer'], idList[statid]['today'], idList[statid]['warning']])
 				headers = ["ID", 'Answer', 'Today', 'Warning']
 				resultTable = '```py\n'+ tabulate(table, headers, tablefmt='presto', numalign='center', stralign='center') + '\n```'
-				print(resultTable)
 				await ctx.send(resultTable)
 	
-	@tasks.loop(hours=3) #hours=3
+	@tasks.loop(hours=3) #hours=3 seconds=20
 	async def loop_station(self):
-		if (self.loopcount > 0) & (self.loopcount < 7) :
+		if (self.loopcount > 0) and (self.loopcount < 7) :
 			embed = Update_today()
 			self.loopcount += 1
 			channel = self.bot.get_channel(DFAULTCHANNEL)
 			await channel.send(embed=embed)
 		elif self.loopcount >= 7 :
 			channel = self.bot.get_channel(DFAULTCHANNEL)
+			Update_today()
 			if self.loopcount == 7 :
+				embedrest=discord.Embed(title="업데이트", description='휴식 중입니다.', color=0x00ff56)
+				embedrest.set_author(name="Coding bot", url="https://www.acmicpc.net/", icon_url="https://user-images.githubusercontent.com/42747200/46140125-da084900-c26d-11e8-8ea7-c45ae6306309.png")
 				self.loopcount += 1
-				print("휴식")
+				await channel.send(embed = embedrest)
 			else :
 				self.loopcount = 1
 				print('reset')
